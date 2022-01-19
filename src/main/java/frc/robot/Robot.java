@@ -4,9 +4,13 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -15,84 +19,94 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * project.
  */
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Default";
-  private static final String kCustomAuto = "My Auto";
-  private String m_autoSelected;
-  private final SendableChooser<String> m_chooser = new SendableChooser<>();
+    private static Joystick joy;
+    private static CANSparkMax sparkOne, sparkTwo;
+    private static double counter = 0;
+    private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
-  @Override
-  public void robotInit() {
-    m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-    m_chooser.addOption("My Auto", kCustomAuto);
-    SmartDashboard.putData("Auto choices", m_chooser);
-  }
-
-  /**
-   * This function is called every robot packet, no matter the mode. Use this for items like
-   * diagnostics that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
-   */
-  @Override
-  public void robotPeriodic() {}
-
-  /**
-   * This autonomous (along with the chooser code above) shows how to select between different
-   * autonomous modes using the dashboard. The sendable chooser code works with the Java
-   * SmartDashboard. If you prefer the LabVIEW Dashboard, remove all of the chooser code and
-   * uncomment the getString line to get the auto name from the text box below the Gyro
-   *
-   * <p>You can add additional auto modes by adding additional comparisons to the switch structure
-   * below with additional strings. If using the SendableChooser make sure to add them to the
-   * chooser code above as well.
-   */
-  @Override
-  public void autonomousInit() {
-    m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
-  }
-
-  /** This function is called periodically during autonomous. */
-  @Override
-  public void autonomousPeriodic() {
-    switch (m_autoSelected) {
-      case kCustomAuto:
-        // Put custom auto code here
-        break;
-      case kDefaultAuto:
-      default:
-        // Put default auto code here
-        break;
+    private String now() {
+        return dtf.format(LocalDateTime.now());
     }
-  }
 
-  /** This function is called once when teleop is enabled. */
-  @Override
-  public void teleopInit() {}
+    /**
+     * This function is run when the robot is first started up and should be used for any
+     * initialization code.
+     */
+    @Override
+    public void robotInit() {
+        System.out.println("Robot powered on at " + now());
 
-  /** This function is called periodically during operator control. */
-  @Override
-  public void teleopPeriodic() {}
+        joy = new Joystick(Constants.joystickUSBOrder);
+        sparkOne = new CANSparkMax(Constants.sparkMax1ID, CANSparkMaxLowLevel.MotorType.kBrushless);
+        sparkTwo = new CANSparkMax(Constants.sparkMax2ID, CANSparkMaxLowLevel.MotorType.kBrushless);
+    }
 
-  /** This function is called once when the robot is disabled. */
-  @Override
-  public void disabledInit() {}
+    @Override
+    public void robotPeriodic() {}
 
-  /** This function is called periodically when disabled. */
-  @Override
-  public void disabledPeriodic() {}
+    @Override
+    public void autonomousInit() {
+        System.out.println("No autonomous available; please switch to teleop.");
+    }
 
-  /** This function is called once when test mode is enabled. */
-  @Override
-  public void testInit() {}
+    /** This function is called periodically during autonomous. */
+    @Override
+    public void autonomousPeriodic() {
+        if (counter >= 15) {
+            System.out.println("No autonomous available; please switch to teleop.");
+            counter = 0;
+        }
+        counter++;
+    }
 
-  /** This function is called periodically during test mode. */
-  @Override
-  public void testPeriodic() {}
+    /** This function is called once when teleop is enabled. */
+    @Override
+    public void teleopInit() {
+        System.out.println("Teleop enabled at " + now());
+    }
+
+    /** This function is called periodically during operator control. */
+    @Override
+    public void teleopPeriodic() {
+        // TODO: Evaluate controls
+        sparkOne.set(joy.getRawAxis(1));
+        if (joy.getRawButton(3)) {
+            sparkOne.set(joy.getY());
+            sparkTwo.set(joy.getY());
+            return;
+        }
+
+        if (joy.getTrigger()) {
+            sparkOne.set(joy.getY());
+        } else {
+            sparkTwo.set(joy.getY());
+        }
+    }
+
+    /** This function is called once when the robot is disabled. */
+    @Override
+    public void disabledInit() {
+        System.out.println("Robot disabled at " + now());
+        counter = 0;
+    }
+
+    /** This function is called periodically when disabled. */
+    @Override
+    public void disabledPeriodic() {}
+
+    /** This function is called once when test mode is enabled. */
+    @Override
+    public void testInit() {
+        System.out.println("No test mode available; please switch to teleop");
+    }
+
+    /** This function is called periodically during test mode. */
+    @Override
+    public void testPeriodic() {
+        if (counter >= 15) {
+            System.out.println("No test mode available; please switch to teleop.");
+            counter = 0;
+        }
+        counter++;
+    }
 }
